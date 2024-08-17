@@ -1,5 +1,4 @@
 import { reloadable } from "./lib/tstl-utils";
-import { modifier_panic } from "./modifiers/modifier_panic";
 
 const heroSelectionTime = 20;
 
@@ -26,33 +25,19 @@ export class GameMode {
 
         // Register event listeners for dota engine events
         ListenToGameEvent("game_rules_state_change", () => this.OnStateChange(), undefined);
-        ListenToGameEvent("npc_spawned", event => this.OnNpcSpawned(event), undefined);
-
-        // Register event listeners for events from the UI
-        CustomGameEventManager.RegisterListener("ui_panel_closed", (_, data) => {
-            print(`Player ${data.PlayerID} has closed their UI panel.`);
-
-            // Respond by sending back an example event
-            const player = PlayerResource.GetPlayer(data.PlayerID)!;
-            CustomGameEventManager.Send_ServerToPlayer(player, "example_event", {
-                myNumber: 42,
-                myBoolean: true,
-                myString: "Hello!",
-                myArrayOfNumbers: [1.414, 2.718, 3.142]
-            });
-
-            // Also apply the panic modifier to the sending player's hero
-            const hero = player.GetAssignedHero();
-            hero.AddNewModifier(hero, undefined, modifier_panic.name, { duration: 5 });
-        });
+        ListenToGameEvent("hero_selected", event => this.OnHeroSelectionChanged(event), undefined);
     }
 
     private configure(): void {
-        GameRules.SetCustomGameTeamMaxPlayers(DotaTeam.GOODGUYS, 3);
-        GameRules.SetCustomGameTeamMaxPlayers(DotaTeam.BADGUYS, 3);
+        GameRules.SetCustomGameTeamMaxPlayers(DotaTeam.GOODGUYS, 4);
+        GameRules.SetCustomGameTeamMaxPlayers(DotaTeam.BADGUYS, 0);
 
-        GameRules.SetShowcaseTime(0);
         GameRules.SetHeroSelectionTime(heroSelectionTime);
+        GameRules.SetStrategyTime(5);
+        GameRules.SetShowcaseTime(0);
+        GameRules.SetPreGameTime(0);
+
+        GameRules.SetUseUniversalShopMode(true);
     }
 
     public OnStateChange(): void {
@@ -60,15 +45,15 @@ export class GameMode {
 
         // Add 4 bots to lobby in tools
         if (IsInToolsMode() && state == GameState.CUSTOM_GAME_SETUP) {
-            for (let i = 0; i < 4; i++) {
-                Tutorial.AddBot("npc_dota_hero_lina", "", "", false);
+            for (let i = 0; i < 1; i++) {
+                Tutorial.AddBot("npc_dota_hero_sven", "", "", true);
             }
         }
 
         if (state === GameState.CUSTOM_GAME_SETUP) {
             // Automatically skip setup in tools
             if (IsInToolsMode()) {
-                Timers.CreateTimer(3, () => {
+                Timers.CreateTimer(1, () => {
                     GameRules.FinishCustomGameSetup();
                 });
             }
@@ -78,10 +63,66 @@ export class GameMode {
         if (state === GameState.PRE_GAME) {
             Timers.CreateTimer(0.2, () => this.StartGame());
         }
+
+        // if (state === GameState.GAME_IN_PROGRESS) {
+        //     this.StartGame();
+        // }
+
     }
 
-    private StartGame(): void {
-        print("Game starting!");
+    private StartGame(): number | void {
+        if (IsServer()) {
+            print("Checking For All Heroes");
+            for (let index = 0; index < 4; index++) {
+                if (PlayerResource.IsValidPlayerID(index)) {
+                    const player = PlayerResource.GetPlayer(index);
+                    if (player == undefined) {
+                        print("Player " + index + "is underfined");
+                        continue;
+                    }
+
+                    const hero = PlayerResource.GetSelectedHeroEntity(index);
+                    if (hero == undefined) {
+                        //This Player's hero is still spawning, wait and check again.
+                        return 0.2;
+                    } else {
+                        print("Hero Existed " + hero.GetName() + " For Player " + hero.GetPlayerID());
+                    }
+                }
+            }
+
+            //All Players Have Spawned
+            print("All Players Spawned: Game starting!");
+            for (let index = 0; index < 4; index++) {
+                if (PlayerResource.IsValidPlayerID(index)) {
+                    const player = PlayerResource.GetPlayer(index);
+                    if (player == undefined) {
+                        continue;
+                    }
+
+                    const hero = PlayerResource.GetSelectedHeroEntity(index);
+                    if (hero == undefined) {
+                        error("Undefined Hero After Game Started!");
+                    } else {
+                        const heroes = HeroList.GetAllHeroes().filter((hero) => hero.GetTeamNumber() == DotaTeam.GOODGUYS).map((hero) => hero.GetName());
+
+                        if (hero.GetName() == "npc_dota_hero_axe" && heroes.includes('npc_dota_hero_sven')) {
+                            const old_ability = hero.GetAbilityByIndex(0);
+                            if(old_ability == undefined) continue;
+               
+                            const new_ability = hero.AddAbility("axe_berserkers_call_2_ts");
+                            new_ability.SetLevel(1);
+
+                            hero.RemoveAbilityByHandle(old_ability);
+                            hero.RemoveAbilityFromIndexByName(new_ability.GetName());
+                            hero.SetAbilityByIndex(new_ability, 0);
+
+                        }
+                    }
+                }
+            }
+
+        }
 
         // Do some stuff here
     }
@@ -93,15 +134,10 @@ export class GameMode {
         // Do some stuff here
     }
 
-    private OnNpcSpawned(event: NpcSpawnedEvent) {
-        // After a hero unit spawns, apply modifier_panic for 8 seconds
-        const unit = EntIndexToHScript(event.entindex) as CDOTA_BaseNPC; // Cast to npc since this is the 'npc_spawned' event
-        // Give all real heroes (not illusions) the meepo_earthbind_ts_example spell
-        if (unit.IsRealHero()) {
-            if (!unit.HasAbility("meepo_earthbind_ts_example")) {
-                // Add lua ability to the unit
-                unit.AddAbility("meepo_earthbind_ts_example");
-            }
-        }
+    private OnHeroSelectionChanged(event: HeroSelectedEvent) {
+        print("OnHeroSelectionChanged");
+        print(event.player_id);
+        print(event.hero_unit);
+        print(PlayerResource.GetSelectedHeroEntity(event.player_id));
     }
 }

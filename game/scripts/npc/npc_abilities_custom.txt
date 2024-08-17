@@ -1,5 +1,16 @@
-#base "heroes/meepo.kv"
-
+// Dota Heroes File
 "DOTAAbilities"
 {
+	"Version"		"1"
+
+	
 }
+
+//=================================================================================================================
+// TYPESCRIPT ABILITIES
+//=================================================================================================================
+#base "../vscripts/abilities/heroes/axe/axe_berserkers_call_ts/axe_berserkers_call_ts.txt"
+#base "../vscripts/abilities/heroes/axe/axe_berserkers_call_ts/axe_berserkers_call_2_ts.txt"
+#base "../vscripts/lua_abilities/axe_battle_hunger_lua/axe_battle_hunger_lua.txt"
+#base "../vscripts/lua_abilities/axe_counter_helix_lua/axe_counter_helix_lua.txt"
+#base "../vscripts/lua_abilities/axe_culling_blade_lua/axe_culling_blade_lua.txt"

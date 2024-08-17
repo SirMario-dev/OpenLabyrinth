@@ -1,0 +1,19 @@
+"lang"
+{
+    "Language"    "english"
+    "Tokens"
+    {
+        "Hello"    "test"
+        "DOTA_Tooltip_Ability_axe_berserkers_call_ts"    "Beserkers Call"
+        "DOTA_Tooltip_Ability_axe_berserkers_call_ts_description"    "Taunt some fellas"
+        "DOTA_Tooltip_Ability_axe_berserkers_call_ts_Lore"    "Big red and angry"
+        "DOTA_Tooltip_Ability_axe_berserkers_call_ts_Note0"    "The projectile moves at %projectile_speed% speed."
+        "DOTA_Tooltip_Ability_axe_berserkers_call_ts_Note1"    "Despite the visual effect, all enemies in range immediately take damage upon impact."
+        "DOTA_Tooltip_Ability_axe_berserkers_call_ts_Note2"    "Can be disjointed."
+        "DOTA_Tooltip_Ability_axe_berserkers_call_ts_radius"    "RADIUS:"
+        "DOTA_Tooltip_Ability_axe_berserkers_call_ts_bonus_armor"    "BONUS ARMOR:"
+        "DOTA_Tooltip_Ability_axe_berserkers_call_ts_duration"    "DURATION:"
+        "DOTA_Tooltip_modifier_greater_power"    "Greater Power"
+        "DOTA_Tooltip_modifier_greater_power_description"    "Increases your base damage and your move speed."
+    }
+}
